@@ -5,6 +5,7 @@ import email
 from imapclient import IMAPClient
 import sys
 import collections
+import traceback
 
 print 'Usage: %s <username>' % sys.argv[0]
 
@@ -42,31 +43,30 @@ for j, conn in reversed(list(enumerate((source, dest)))):
                     raise
                 mid = msg['message-id']
                 print mid, msg['from'], msg['subject']
-                folders[mid][j] = folder_name
+                if folders[mid][j] is None or '[' in folders[mid][j]:
+                    folders[mid][j] = folder_name
             i += batch
-
-dest_folder = 'recovered'
-
-try:
-    dest.create_folder(dest_folder)
-except:
-    pass
 
 full_fetch = ['FLAGS', 'INTERNALDATE', 'RFC822']
 
-failed = []
+failed = {}
 
 for uid in folders:
     if folders[uid][1] is None:
         print 'missing', uid, folders[uid][0]
         source.select_folder(folders[uid][0])
+        dest_folder = 'recovered/' + folders[uid][0]
+        if dest_folder not in (x[-1] for x in dest.list_folders()):
+            dest.create_folder(dest_folder)
         try:
             source_data = source.fetch(source.search(
-                '(HEADER Message-Id "%s")' % uid.strip()), full_fetch).values()[0]
-            dest.append(dest_folder, source_data['RFC822'], source_data['FLAGS'], \
+                '(HEADER Message-Id "%s")' % uid.strip()), \
+                                       full_fetch).values()[0]
+            dest.append(dest_folder, source_data['RFC822'], \
+                        source_data['FLAGS'], \
                         source_data['INTERNALDATE'])
         except:
-            failed.append(uid)
+            failed[uid] = traceback.format_exc()
 
 print 'failed', failed
 
