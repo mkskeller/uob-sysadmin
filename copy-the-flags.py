@@ -54,7 +54,7 @@ for folder in dest.list_folders():
     batch = 1000
     to_set = collections.defaultdict(list)
     while msgnums[i:i+batch]:
-        msgs = source.fetch(msgnums[i:i+batch], ['FLAGS', 'RFC822.HEADER'])
+        msgs = dest.fetch(msgnums[i:i+batch], ['FLAGS', 'RFC822.HEADER'])
         for msgnum, data in msgs.iteritems():
             msg = email.message_from_string(data['RFC822.HEADER'])
             mid = msg['message-id']
@@ -66,7 +66,10 @@ for folder in dest.list_folders():
         i += batch
     for f,msgnums in to_set.iteritems():
         print f, msgnums
-        dest.set_flags(msgnums, f)
+        i = 0
+        while msgnums[i:i+batch]:
+            dest.add_flags(msgnums[i:i+batch], f)
+            i += batch
 
 for conn in source, dest:
     conn.close_folder()
