@@ -39,6 +39,7 @@ for folder in source.list_folders():
             print mid, msg['from'], msg['subject']
             flags[mid] = data['FLAGS']
         i += batch
+source.logout()
 
 print 'processing dest'
 for folder in dest.list_folders():
@@ -67,7 +68,4 @@ for folder in dest.list_folders():
     for f,msgnums in to_set.iteritems():
         print f, msgnums
         dest.set_flags(msgnums, f)
-
-for conn in source, dest:
-    conn.close_folder()
-    conn.logout()
+dest.logout()
